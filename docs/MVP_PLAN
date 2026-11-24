@@ -1,0 +1,143 @@
+# Kelasa Dhwani – 24-Hour MVP Plan
+
+## 1. MVP Objective
+
+The goal is to build a basic working version of Kelasa Dhwani within 24 hours.
+
+The MVP should demonstrate how a worker can register using voice, receive a skill profile, discover nearby jobs and get spoken job recommendations.
+
+We will focus on a small working demonstration instead of trying to build every planned feature.
+
+## 2. MVP Scope
+
+### Target Location
+
+One selected area in Bengaluru.
+
+### Target Trades
+
+We will initially support three to four trades:
+
+1. Electrician
+2. Plumber
+3. Painter
+4. Carpenter
+
+These trades are selected because they represent common local service jobs and can be demonstrated using sample job listings.
+
+### Features to Build
+
+| Feature | MVP Requirement |
+|---|---|
+| Voice registration | Worker sends a Telegram voice note |
+| Speech processing | Convert voice into text |
+| Skill extraction | Identify trade, experience, area and availability |
+| Skill card | Create a basic worker profile |
+| Job listings | Add sample local job opportunities |
+| Job matching | Match using skill, distance and pay |
+| Voice response | Read out job details using ElevenLabs |
+| Learning tip | Provide a short trade-related learning tip |
+| Employer rating | Allow a basic rating after a completed job |
+
+## 3. Build Order
+
+### Phase 1: Basic Setup
+
+- Set up the project structure.
+- Prepare the Telegram bot.
+- Set up the FastAPI backend.
+- Prepare the React page.
+- Configure required API access.
+
+### Phase 2: Worker Registration
+
+- Receive a Telegram voice message.
+- Convert speech into text.
+- Extract trade, experience, area and availability.
+- Allow the worker to confirm the information.
+- Save the skill profile.
+
+### Phase 3: Job Matching
+
+- Prepare sample employer job listings.
+- Add basic job matching rules.
+- Compare trade, distance and pay.
+- Display suitable opportunities.
+
+### Phase 4: Voice Responses
+
+- Generate a short learning tip.
+- Prepare job recommendation text.
+- Convert the response into audio using ElevenLabs.
+- Send the audio response through Telegram.
+
+### Phase 5: Rating and Testing
+
+- Add a basic employer rating option.
+- Update the worker's skill card.
+- Test the complete worker journey.
+- Fix major errors before the final demonstration.
+
+## 4. Demo Plan
+
+The final demonstration will show one complete worker journey.
+
+### Example Scenario
+
+A worker sends a voice note:
+
+"I am an electrician with five years of experience. I live in Bengaluru and I am available for work."
+
+The system then:
+
+1. Converts the voice message into text.
+2. Extracts the worker's trade and experience.
+3. Creates an electrician skill card.
+4. Finds suitable nearby electrician jobs.
+5. Reads out job details and offered wages.
+6. Provides a short electrical safety learning tip.
+7. Allows the employer to submit a rating after the job is completed.
+8. Updates the worker's skill card.
+
+The demonstration will use sample job data and a controlled location.
+
+## 5. Risks and Solutions
+
+| Risk | Planned Solution |
+|---|---|
+| Voice recognition errors | Allow workers to repeat or correct details |
+| Different accents | Test Kannada, Hindi and English voice samples |
+| Incorrect skill extraction | Ask the worker to confirm the skill card |
+| Fake job listings | Use manually reviewed sample listings for the demo |
+| Incorrect distance | Use a fixed pilot area and verified sample locations |
+| API failures | Keep sample text and audio responses as fallbacks |
+| Time limitations | Prioritise the worker registration and job matching journey |
+
+## 6. Features Outside the MVP
+
+The following features are not priorities for the first 24 hours:
+
+- Full employer verification system.
+- Online payments.
+- Advanced recommendation models.
+- Complete work-history verification.
+- Large-scale location coverage.
+- Complex analytics dashboard.
+- Support for every Indian language.
+
+These features can be considered after the MVP.
+
+## 7. Success Criteria
+
+The MVP will be considered successful if the team can demonstrate:
+
+- A worker registering through a voice message.
+- A correctly created skill card.
+- At least one relevant job recommendation.
+- A spoken response containing job details.
+- A short learning tip.
+- An employer rating updating the worker's profile.
+
+## 8. Final Goal
+
+Build a simple and understandable demonstration that shows how voice technology can help informal workers explain their skills, find local work and gradually build a record of their experience.
