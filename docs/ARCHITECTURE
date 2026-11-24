@@ -1,0 +1,137 @@
+
+# Kelasa Dhwani – System Architecture
+
+## 1. Overview
+
+Kelasa Dhwani is planned as a voice-first platform for informal and semi-skilled workers.
+
+Workers interact mainly through Telegram voice notes. The system processes their speech, creates a skill profile, finds suitable nearby jobs and responds using voice.
+
+The architecture has two main users:
+
+- Workers looking for job opportunities.
+- Employers who need workers for specific jobs.
+
+## 2. Worker Path
+
+### Step 1: Voice Registration
+
+The worker opens the Kelasa Dhwani Telegram bot and sends a voice note.
+
+Example:
+
+"I am an electrician. I have five years of experience. I live in Bengaluru and I am available for work."
+
+The worker can speak in Kannada, Hindi or English.
+
+### Step 2: Speech Processing
+
+The backend receives the voice message.
+
+The speech-to-text service converts the audio into text. An LLM processes the text and identifies important information.
+
+Expected information:
+
+- Trade: Electrician
+- Experience: 5 years
+- Area: Bengaluru
+- Availability: Available for work
+- Skills: Basic electrical repairs and installation
+
+The worker should be able to confirm or correct the extracted information.
+
+### Step 3: Skill Card Creation
+
+The system creates a digital skill card containing:
+
+- Worker name or preferred identifier.
+- Trade.
+- Experience.
+- Skills.
+- Location.
+- Availability.
+- Employer ratings, once available.
+
+The information is stored in DynamoDB.
+
+## 3. Employer Path
+
+Employers or contractors provide job information through the planned web interface.
+
+A job listing may contain:
+
+- Job title.
+- Required trade.
+- Work location.
+- Expected wage.
+- Work description.
+- Required experience.
+- Job date and availability.
+
+For the MVP, job listings may be entered manually by the team or through a basic employer form.
+
+## 4. Job Matching
+
+The matching system compares worker profiles with available jobs.
+
+The main matching factors are:
+
+1. **Skill:** Does the worker have the required trade and skills?
+2. **Distance:** Is the job location close to the worker?
+3. **Pay:** Does the offered wage meet the worker's expectations, if provided?
+
+Python-based matching logic will rank suitable jobs.
+
+The MVP will use simple matching rules instead of a complex recommendation model.
+
+## 5. Voice Reply
+
+After finding suitable jobs, the system prepares a response.
+
+The response includes:
+
+- Job name.
+- Work location.
+- Usual or offered wage.
+- Basic job details.
+- A short learning tip related to the worker's trade.
+
+ElevenLabs is planned for generating voice replies.
+
+The worker receives the response through Telegram.
+
+## 6. What Happens After a Job?
+
+After a worker completes a job:
+
+1. The employer provides feedback and a rating.
+2. The system records the completed job.
+3. The worker's skill card is updated.
+4. The worker builds a record of work experience over time.
+
+Ratings should reflect completed work and should not be treated as formal certification.
+
+For the MVP, this process will use a simple employer rating flow.
+
+## 7. Planned Architecture Components
+
+| Layer | Planned Technology | Responsibility |
+|---|---|---|
+| Worker interface | Telegram Bot | Receive voice messages and send replies |
+| Web interface | React | Employer job entry and basic viewing |
+| Backend | FastAPI | Handle requests and application workflow |
+| Speech processing | Speech-to-text API | Convert audio into text |
+| AI processing | LLM API | Extract skills and worker details |
+| Voice generation | ElevenLabs | Generate spoken responses |
+| Cloud | AWS Lambda and S3 | Backend processing and audio storage |
+| Database | DynamoDB | Store profiles, jobs and ratings |
+| Matching | Python | Rank jobs using skill, distance and pay |
+
+## 8. Important Considerations
+
+- Workers should be able to correct incorrect profile details.
+- Location information should be used only with appropriate permission.
+- Job listings should be checked to reduce fake opportunities.
+- Worker ratings should not be publicly exposed without consent.
+- Language support must be tested with actual voice samples.
+- Personal information should be protected.
