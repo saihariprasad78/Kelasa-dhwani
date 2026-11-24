@@ -1,87 +1,73 @@
-
 # Kelasa Dhwani
 
-### Voice-first skill and job assistant for informal workers
+**Speak once. Get a skill card, a learning tip and a nearby job.**
 
-**Kelasa Dhwani** means "work voice" in Kannada.
+Kelasa Dhwani ("work voice" in Kannada) is a voice-first assistant for informal and semi-skilled workers. A worker says what work they do, and the system builds a skill card, reads out nearby jobs with the usual pay, and gives a short learning tip. After a job, the employer's rating is added to the skill card.
 
-Kelasa Dhwani is an ideathon project for wHACKiest 2026, Mystery Track – UnlockED. It aims to help informal and semi-skilled workers in India explain their skills through voice, find nearby job opportunities and build a record of their work experience.
+Built for **wHACKiest 2026** (Mystery Track, UnlockED). This repository is the basic MVP we built for the ideathon.
 
-## Project Status
+## The problem
 
-**Current stage: Ideation phase**
+Informal workers (masons, electricians, plumbers, helpers) often have real skills but no way to prove them. Nearly 90% of India's workforce is informally employed (ILO & IHD, India Employment Report 2024). Many job apps depend on typing, English and resumes, so a skilled worker and a beginner can get the same offer.
 
-This repository currently contains project documentation only. No application code has been written or implemented yet. Development is planned for the 24-hour hackathon.
+## What works in this prototype
 
-## Problem Statement
+- **Voice in and out in the browser.** The worker speaks (or types) and the reply is read aloud. This uses the browser's built-in speech recognition and speech synthesis, so no API key is needed. It works best in Chrome.
+- **Profile from speech.** A rule-based parser pulls out trade, years of experience, area, availability and expected wage. Trade words are recognised in English plus a few Hindi and Kannada words.
+- **Skill card.** Trade, years, level, jobs completed, average rating, and a "verified by employers" flag after 3 or more good ratings.
+- **Job matching.** Open jobs for the worker's trade are ranked by distance, wage and day. The "usual pay" is the median pay of the jobs in the system.
+- **Learning tip** for the worker's trade.
+- **Employer page.** An employer can post a job (trade, area, daily wage, day).
+- **Ratings with a rule.** A job must be marked completed by that worker before it can be rated, and each job can be rated once.
 
-Many informal and semi-skilled workers in India have practical skills but do not have a formal resume or certificates to prove their experience.
+Job data is **sample data**, stored in memory, and resets when the server restarts. Area locations are approximate.
 
-According to the India Employment Report 2024 by ILO and IHD, nearly 90% of India's workforce is informally employed.
+## Not built yet (planned)
 
-Most job platforms depend on typing, English and written resumes. This creates difficulties for workers who are more comfortable speaking their local language.
-
-Workers also find it difficult to discover nearby jobs with clear wage information and opportunities to improve their skills.
-
-## Our Idea
-
-Kelasa Dhwani is a voice-first assistant that connects workers with job opportunities and learning resources.
-
-The idea works in four steps:
-
-1. **Speak:** A worker sends a voice note through a Telegram bot in Kannada, Hindi or English.
-2. **Create a skill profile:** AI identifies the worker's trade, experience, location and availability.
-3. **Find opportunities:** The system matches the worker with nearby jobs based on skills, distance and pay. It reads out job details and a short audio learning tip.
-4. **Build a work record:** After a job is completed, the employer provides a rating. The rating updates the worker's skill card.
-
-## Planned Technology Stack
-
-| Component | Technology |
+| Planned | In this prototype |
 |---|---|
-| Worker interface | Telegram Bot |
-| Web interface | React |
-| Backend | FastAPI |
-| Speech understanding | Speech-to-text API |
-| AI processing | LLM API |
-| Voice responses | ElevenLabs |
-| Cloud services | AWS Lambda and S3 |
-| Database | DynamoDB |
-| Job matching | Python-based matching logic |
+| Telegram bot for voice notes | Browser page instead |
+| ElevenLabs voice replies | Browser speech synthesis |
+| LLM extraction of the profile | Rule-based parser (same output format) |
+| AWS Lambda + S3, DynamoDB | Local FastAPI server, in-memory data |
+| Employer verification, more areas and trades | 12 Bengaluru areas, 5 trades |
 
-This is the planned stack. Final technology choices may change during the hackathon based on time and feasibility.
+## Run it
 
-## Expected MVP
+```
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-The planned 24-hour MVP will focus on:
+Open http://localhost:8000 in Chrome, tap **Use example** and then **Find work**. For voice, tap **Speak** and allow the microphone.
 
-- One selected area in Bengaluru.
-- Three to four worker trades.
-- Voice-based worker registration.
-- Automatic skill profile creation.
-- Basic nearby job matching.
-- Voice-based job details and learning tips.
-- Employer rating after job completion.
+Run the tests:
+
+```
+python -m unittest -v
+```
+
+## Files
+
+| File | What it does |
+|---|---|
+| `main.py` | FastAPI server and API routes |
+| `profile_parser.py` | Turns spoken text into profile fields, holds learning tips |
+| `matching.py` | Distance, ranking, usual pay, spoken-style reply |
+| `store.py` | In-memory jobs, workers, ratings, skill card |
+| `index.html` | Demo page (worker and employer) |
+| `test_core.py` | Unit tests for parsing, matching and ratings |
+
+## API
+
+| Route | Purpose |
+|---|---|
+| `POST /api/voice-note` | `{"text": "..."}` returns profile, skill card, matches and reply |
+| `GET /api/jobs`, `POST /api/jobs` | List or post jobs |
+| `POST /api/jobs/{id}/complete` | `{"worker_id": 1}` marks a job completed |
+| `POST /api/jobs/{id}/rating` | `{"worker_id": 1, "stars": 5}` adds a rating |
+| `GET /api/workers/{id}/card` | Current skill card |
 
 ## Team
 
-**Institution:** Cambridge Institute of Technology, Bengaluru
-
-| Name | Role |
-|---|---|
-| Sai Hariprasad D | Team Lead |
-| Subhashini B R | Team Member |
-| Rishika | Team Member |
-| Archisma | Team Member |
-
-## Project Information
-
-- Event: wHACKiest 2026
-- Track: Mystery Track
-- Theme: UnlockED
-- Project: Kelasa Dhwani
-
-## Repository Contents
-
-- `README.md` – Project overview.
-- `docs/ARCHITECTURE.md` – Planned system architecture.
-- `docs/MVP_PLAN.md` – 24-hour development plan.
+Sai Hariprasad D (lead), Subhashini B R, Rishika, Archisma. Cambridge Institute of Technology, Bengaluru.
