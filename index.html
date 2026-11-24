@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelasa Dhwani (prototype)</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#f7f1e3; color:#232323; margin:0; padding:16px; max-width:760px; margin:auto; }
+  h1 { margin:0 0 4px; font-size:24px; } .sub { color:#5a5448; margin:0 0 16px; }
+  section { background:#fffdf7; border:1px solid #ded3be; border-radius:10px; padding:14px; margin-bottom:14px; }
+  h2 { font-size:17px; margin:0 0 10px; color:#b85b13; }
+  textarea, select, input { width:100%; box-sizing:border-box; padding:9px; margin:4px 0 8px; font-size:15px; border:1px solid #ccc; border-radius:6px; }
+  button { background:#b85b13; color:#fff; border:0; border-radius:6px; padding:10px 14px; font-size:15px; margin:2px 4px 2px 0; cursor:pointer; }
+  button.light { background:#eadfc6; color:#232323; } button:disabled { opacity:.5; }
+  .job { border-top:1px solid #eee; padding:8px 0; } .muted { color:#5a5448; font-size:14px; } .err { color:#b00020; }
+  .card { background:#fdefde; border-radius:8px; padding:10px; margin-top:8px; }
+</style>
+</head>
+<body>
+<h1>Kelasa Dhwani</h1>
+<p class="sub">Speak once. Get a skill card, a learning tip and a nearby job. (Prototype)</p>
+
+<section>
+  <h2>Worker: say or type what you do</h2>
+  <select id="lang">
+    <option value="en-IN">English</option>
+    <option value="hi-IN">Hindi</option>
+    <option value="kn-IN">Kannada</option>
+  </select>
+  <textarea id="note" rows="3" placeholder="Example: I am an electrician with 8 years experience in Hebbal, free tomorrow"></textarea>
+  <button id="mic">Speak</button>
+  <button id="send">Find work</button>
+  <button id="example" class="light">Use example</button>
+  <p class="muted" id="status"></p>
+  <div id="result"></div>
+</section>
+
+<section>
+  <h2>Employer: post a job</h2>
+  <select id="jtrade"></select>
+  <select id="jarea"></select>
+  <input id="jwage" type="number" placeholder="Daily wage in rupees">
+  <select id="jday"><option>anytime</option><option>today</option><option>tomorrow</option></select>
+  <button id="post">Post job</button>
+  <p class="muted" id="poststatus"></p>
+</section>
+
+<script>
+const TRADES = ["electrician", "plumber", "mason", "painter", "helper"];
+const AREAS = ["hebbal","yelahanka","indiranagar","koramangala","whitefield","jayanagar",
+               "rajajinagar","malleshwaram","yeshwanthpur","btm layout","electronic city","marathahalli"];
+const $ = id => document.getElementById(id);
+let workerId = null;
+
+function fill(select, items) {
+  items.forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; select.appendChild(o); });
+}
+fill($("jtrade"), TRADES); fill($("jarea"), AREAS);
+
+function add(parent, tag, text, cls) {
+  const e = document.createElement(tag);
+  if (text) e.textContent = text;
+  if (cls) e.className = cls;
+  parent.appendChild(e);
+  return e;
+}
+
+async function api(path, method, body) {
+  const res = await fetch(path, { method, headers: { "Content-Type": "application/json" },
+                                  body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json();
+  if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Please check the fields and try again.");
+  return data;
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = $("lang").value;
+  window.speechSynthesis.speak(u);
+}
+
+// Voice input (browser speech recognition, works best in Chrome)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) { $("mic").disabled = true; $("status").textContent = "Voice input is not supported in this browser. Type instead."; }
+$("mic").onclick = () => {
+  const rec = new SR();
+  rec.lang = $("lang").value;
+  rec.onstart = () => { $("status").textContent = "Listening..."; };
+  rec.onresult = e => { $("note").value = e.results[0][0].transcript; $("status").textContent = "Got it. Tap Find work."; };
+  rec.onerror = e => { $("status").textContent = "Could not hear you (" + e.error + "). Try again or type."; };
+  rec.start();
+};
+$("example").onclick = () => {
+  $("note").value = "I am an electrician with 8 years experience in Hebbal, free tomorrow, 900 rupees";
+};
+
+function showCard(parent, card) {
+  const c = add(parent, "div", "", "card");
+  add(c, "strong", "Skill card");
+  add(c, "div", `${card.trade}, ${card.years || "?"} years, ${card.area} (${card.level})`);
+  add(c, "div", `Jobs completed: ${card.jobs_completed}. Ratings: ${card.ratings}` +
+                (card.average_rating ? `, average ${card.average_rating}` : ""));
+  if (card.verified_by_employers) add(c, "div", "Verified by employers");
+  return c;
+}
+
+function showMatches(parent, data) {
+  add(parent, "h3", "Matching jobs");
+  if (!data.matches.length) add(parent, "div", "No open jobs for this trade yet.", "muted");
+  data.matches.forEach(m => {
+    const j = m.job, row = add(parent, "div", "", "job");
+    add(row, "div", `${j.trade} in ${j.area}, ${m.distance_km} km away, Rs ${j.wage} a day, ${j.day}`);
+    add(row, "div", j.employer, "muted");
+    const done = add(row, "button", "Job done", "light");
+    done.onclick = async () => {
+      try {
+        await api(`/api/jobs/${j.id}/complete`, "POST", { worker_id: workerId });
+        done.remove();
+        add(row, "span", "Employer rating: ", "muted");
+        [1, 2, 3, 4, 5].forEach(s => {
+          const b = add(row, "button", String(s), "light");
+          b.onclick = async () => {
+            try {
+              const r = await api(`/api/jobs/${j.id}/rating`, "POST", { worker_id: workerId, stars: s });
+              row.querySelectorAll("button").forEach(x => x.remove());
+              add(row, "div", "Rating saved. Skill card updated below.", "muted");
+              $("cardbox").innerHTML = ""; showCard($("cardbox"), r.skill_card);
+            } catch (err) { add(row, "div", err.message, "err"); }
+          };
+        });
+      } catch (err) { add(row, "div", err.message, "err"); }
+    };
+  });
+}
+
+$("send").onclick = async () => {
+  const out = $("result"); out.innerHTML = "";
+  const text = $("note").value.trim();
+  if (!text) { $("status").textContent = "Say or type something first."; return; }
+  try {
+    const data = await api("/api/voice-note", "POST", { text });
+    add(out, "p", data.reply);
+    speak(data.reply);
+    if (data.status !== "ok") return;
+    workerId = data.worker_id;
+    const box = add(out, "div"); box.id = "cardbox"; showCard(box, data.skill_card);
+    showMatches(out, data);
+  } catch (err) { add(out, "p", err.message, "err"); }
+};
+
+$("post").onclick = async () => {
+  try {
+    const wage = parseInt($("jwage").value, 10);
+    await api("/api/jobs", "POST", { trade: $("jtrade").value, area: $("jarea").value, wage, day: $("jday").value });
+    $("poststatus").textContent = "Job posted. It will show up for matching workers.";
+  } catch (err) { $("poststatus").textContent = err.message; }
+};
+</script>
+</body>
+</html>
