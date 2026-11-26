@@ -25,6 +25,24 @@ class ParserTests(unittest.TestCase):
     def test_missing_fields(self):
         self.assertEqual(pp.missing_fields(pp.parse_voice_text("hello")), ["trade", "area"])
 
+    def test_speech_recognition_spelling_mistakes(self):
+        p = pp.parse_voice_text("i am an electrishian with eight years in hebal free tomorrow")
+        self.assertEqual((p["trade"], p["years"], p["area"]), ("electrician", 8, "hebbal"))
+        p = pp.parse_voice_text("plumbar in indira nagar five years")
+        self.assertEqual((p["trade"], p["area"], p["years"]), ("plumber", "indiranagar", 5))
+
+    def test_hindi_and_kannada_scripts(self):
+        p = pp.parse_voice_text("मैं इलेक्ट्रीशियन हूँ, आठ साल, हेब्बल में, कल खाली हूँ")
+        self.assertEqual((p["trade"], p["years"], p["area"], p["availability"]),
+                         ("electrician", 8, "hebbal", "tomorrow"))
+        p = pp.parse_voice_text("ನಾನು ಪ್ಲಂಬರ್, ಐದು ವರ್ಷ, ಇಂದಿರಾನಗರ, ನಾಳೆ")
+        self.assertEqual((p["trade"], p["years"], p["area"], p["availability"]),
+                         ("plumber", 5, "indiranagar", "tomorrow"))
+
+    def test_common_words_do_not_trigger_fuzzy_matches(self):
+        p = pp.parse_voice_text("I want to reason about a number of things")
+        self.assertEqual((p["trade"], p["area"]), (None, None))
+
     def test_kal_inside_word_is_not_tomorrow(self):
         self.assertEqual(pp.parse_voice_text("local electrician in hebbal")["availability"], "anytime")
 

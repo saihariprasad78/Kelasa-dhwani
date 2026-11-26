@@ -99,6 +99,24 @@ def rate_job(job_id: int, body: RatingIn):
     return {"message": message, "skill_card": store.skill_card(body.worker_id)}
 
 
+@app.get("/api/workers/{worker_id}/matches")
+def worker_matches(worker_id: int):
+    """Fresh matches for a worker already registered (for example after a new job is posted)."""
+    worker = store.workers.get(worker_id)
+    if worker is None:
+        raise HTTPException(404, "Worker not found.")
+    all_jobs = list(store.jobs.values())
+    return {"matches": matching.rank_jobs(worker, all_jobs),
+            "typical_wage": matching.typical_wage(worker["trade"], all_jobs)}
+
+
+@app.post("/api/reset")
+def reset_demo():
+    """Clear workers, ratings and posted jobs and restore the sample jobs."""
+    store.reset()
+    return {"message": "Demo reset."}
+
+
 @app.get("/api/workers/{worker_id}/card")
 def worker_card(worker_id: int):
     if worker_id not in store.workers:

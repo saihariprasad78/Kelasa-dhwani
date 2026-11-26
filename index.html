@@ -3,160 +3,688 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kelasa Dhwani (prototype)</title>
+<title>Kelasa Dhwani | Voice skill card and local work</title>
 <style>
-  body { font-family: Arial, sans-serif; background:#f7f1e3; color:#232323; margin:0; padding:16px; max-width:760px; margin:auto; }
-  h1 { margin:0 0 4px; font-size:24px; } .sub { color:#5a5448; margin:0 0 16px; }
-  section { background:#fffdf7; border:1px solid #ded3be; border-radius:10px; padding:14px; margin-bottom:14px; }
-  h2 { font-size:17px; margin:0 0 10px; color:#b85b13; }
-  textarea, select, input { width:100%; box-sizing:border-box; padding:9px; margin:4px 0 8px; font-size:15px; border:1px solid #ccc; border-radius:6px; }
-  button { background:#b85b13; color:#fff; border:0; border-radius:6px; padding:10px 14px; font-size:15px; margin:2px 4px 2px 0; cursor:pointer; }
-  button.light { background:#eadfc6; color:#232323; } button:disabled { opacity:.5; }
-  .job { border-top:1px solid #eee; padding:8px 0; } .muted { color:#5a5448; font-size:14px; } .err { color:#b00020; }
-  .card { background:#fdefde; border-radius:8px; padding:10px; margin-top:8px; }
+  :root { --bg:#f7f1e3; --card:#fffdf7; --ink:#232323; --muted:#5a5448; --line:#ded3be; --accent:#b85b13; --accent2:#e07d2a;
+          --tan:#f4ebd6; --ok:#2e7d32; --err:#b00020; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; }
+  .wrap { max-width:1080px; margin:0 auto; padding:16px; }
+  header { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .logo { width:44px; height:44px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; gap:3px; }
+  .logo i { display:block; width:4px; background:#fff; border-radius:2px; }
+  .logo i:nth-child(1){height:12px} .logo i:nth-child(2){height:22px} .logo i:nth-child(3){height:16px} .logo i:nth-child(4){height:9px}
+  h1 { margin:0; font-size:24px; letter-spacing:.2px; } .tag { margin:0; color:var(--muted); font-size:14px; }
+  .grow { flex:1; }
+  .pill { font-size:12px; padding:4px 10px; border-radius:999px; background:var(--tan); border:1px solid var(--line); color:var(--muted); }
+  .pill.on { background:#e6f2e7; border-color:#b9d9bb; color:var(--ok); }
+  .link { background:none; border:1px solid var(--line); color:var(--muted); padding:5px 10px; border-radius:6px; font-size:13px; cursor:pointer; }
+  .steps { display:flex; gap:6px; margin:6px 0 14px; flex-wrap:wrap; }
+  .step { flex:1; min-width:110px; font-size:12px; padding:7px 8px; border-radius:8px; background:var(--tan); color:var(--muted); text-align:center; border:1px solid transparent; }
+  .step b { display:inline-block; width:18px; height:18px; line-height:18px; border-radius:50%; background:#fff; margin-right:4px; font-size:11px; }
+  .step.now { background:var(--accent); color:#fff; } .step.now b { color:var(--accent); }
+  .step.done { background:#e6f2e7; color:var(--ok); border-color:#b9d9bb; }
+  .grid { display:grid; gap:14px; grid-template-columns:1fr; }
+  @media (min-width:900px) { .grid { grid-template-columns:380px 1fr; align-items:start; } }
+  section, details { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  h2 { margin:0 0 10px; font-size:13px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .chip { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; }
+  .chip.sel { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .micwrap { display:flex; flex-direction:column; align-items:center; margin:6px 0 10px; }
+  .mic { width:84px; height:84px; border-radius:50%; border:0; background:var(--accent); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(184,91,19,.4); }
+  .mic.live { background:var(--err); animation:pulse 1.2s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(176,0,32,.5)} 70%{box-shadow:0 0 0 22px rgba(176,0,32,0)} 100%{box-shadow:0 0 0 0 rgba(176,0,32,0)} }
+  .miclabel { font-size:13px; color:var(--muted); margin-top:8px; text-align:center; min-height:18px; }
+  textarea, select, input { width:100%; padding:10px; font-size:15px; border:1px solid var(--line); border-radius:8px; background:#fff; font-family:inherit; margin:4px 0 8px; }
+  textarea { resize:vertical; min-height:70px; }
+  .btn { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:11px 16px; font-size:15px; font-weight:600; cursor:pointer; }
+  .btn.light { background:var(--tan); color:var(--ink); font-weight:500; } .btn:disabled { opacity:.55; cursor:default; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; } .row > .btn { flex:1; }
+  .muted { color:var(--muted); font-size:13px; } .err { color:var(--err); }
+  .empty { color:var(--muted); text-align:center; padding:34px 10px; }
+  .bubble { padding:10px 12px; border-radius:12px; margin:0 0 8px; max-width:92%; font-size:15px; }
+  .bubble.you { background:var(--tan); margin-left:auto; border-bottom-right-radius:3px; }
+  .bubble.bot { background:#fdefde; border:1px solid #f1d6b5; border-bottom-left-radius:3px; }
+  .bubble small { display:block; color:var(--muted); font-size:12px; margin-bottom:3px; }
+  .replay { margin-top:6px; background:none; border:1px solid var(--accent); color:var(--accent); border-radius:6px; font-size:12px; padding:3px 9px; cursor:pointer; }
+  .scard { border:2px solid var(--accent2); border-radius:14px; padding:14px; margin:12px 0; background:linear-gradient(135deg,#fffdf7,#fdefde); }
+  .scard.flash { animation:flash 1.4s; }
+  @keyframes flash { 0%{box-shadow:0 0 0 0 rgba(46,125,50,.7)} 60%{box-shadow:0 0 0 14px rgba(46,125,50,0)} 100%{box-shadow:none} }
+  .stop { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  .trade { font-size:20px; font-weight:700; text-transform:capitalize; }
+  .badge { font-size:12px; padding:3px 10px; border-radius:999px; background:var(--accent); color:#fff; }
+  .badge.ok { background:var(--ok); }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px; text-align:center; }
+  .stat b { display:block; font-size:18px; } .stat span { font-size:12px; color:var(--muted); }
+  .job { border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fff; }
+  .jtop { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+  .wage { font-size:20px; font-weight:700; color:var(--accent); white-space:nowrap; }
+  .meta { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .tagx { font-size:12px; background:var(--tan); border-radius:999px; padding:2px 9px; color:var(--muted); }
+  .bar { height:6px; background:var(--tan); border-radius:4px; overflow:hidden; margin:6px 0 8px; } .bar i { display:block; height:100%; background:var(--accent2); }
+  .stars { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .star { width:42px; height:42px; border-radius:50%; border:1px solid var(--line); background:#fff; font-size:16px; cursor:pointer; }
+  .star:hover { background:var(--accent2); color:#fff; }
+  .done { color:var(--ok); font-weight:600; font-size:14px; }
+  details { margin-top:14px; } summary { cursor:pointer; font-weight:600; color:var(--accent); }
+  footer { color:var(--muted); font-size:12px; text-align:center; padding:14px 0; }
 </style>
 </head>
 <body>
-<h1>Kelasa Dhwani</h1>
-<p class="sub">Speak once. Get a skill card, a learning tip and a nearby job. (Prototype)</p>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div><h1>Kelasa Dhwani</h1><p class="tag">Speak once. Get a skill card, a learning tip and a nearby job.</p></div>
+    <div class="grow"></div>
+    <span class="pill" id="mode">Checking...</span>
+    <button class="link" id="reset" title="Clear the demo and start fresh">Reset demo</button>
+  </header>
 
-<section>
-  <h2>Worker: say or type what you do</h2>
-  <select id="lang">
-    <option value="en-IN">English</option>
-    <option value="hi-IN">Hindi</option>
-    <option value="kn-IN">Kannada</option>
-  </select>
-  <textarea id="note" rows="3" placeholder="Example: I am an electrician with 8 years experience in Hebbal, free tomorrow"></textarea>
-  <button id="mic">Speak</button>
-  <button id="send">Find work</button>
-  <button id="example" class="light">Use example</button>
-  <p class="muted" id="status"></p>
-  <div id="result"></div>
-</section>
+  <div class="steps" id="steps">
+    <div class="step"><b>1</b>Speak</div>
+    <div class="step"><b>2</b>Skill card</div>
+    <div class="step"><b>3</b>Nearby jobs</div>
+    <div class="step"><b>4</b>Job done + rating</div>
+    <div class="step"><b>5</b>Card updated</div>
+  </div>
 
-<section>
-  <h2>Employer: post a job</h2>
-  <select id="jtrade"></select>
-  <select id="jarea"></select>
-  <input id="jwage" type="number" placeholder="Daily wage in rupees">
-  <select id="jday"><option>anytime</option><option>today</option><option>tomorrow</option></select>
-  <button id="post">Post job</button>
-  <p class="muted" id="poststatus"></p>
-</section>
+  <div class="grid">
+    <section>
+      <h2>Worker</h2>
+      <div class="chips" id="langs">
+        <button class="chip sel" data-lang="en-IN">English</button>
+        <button class="chip" data-lang="hi-IN">Hindi</button>
+        <button class="chip" data-lang="kn-IN">Kannada</button>
+      </div>
+      <div class="micwrap">
+        <button class="mic" id="mic" aria-label="Tap and speak">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        </button>
+        <div class="miclabel" id="miclabel">Tap the mic and say what work you do and where</div>
+      </div>
+      <textarea id="note" rows="3" placeholder="Or type here. Example: I am an electrician with 8 years experience in Hebbal, free tomorrow"></textarea>
+      <div class="row">
+        <button class="btn" id="send">Find work</button>
+        <button class="btn light" id="clear">Clear</button>
+      </div>
+      <p class="muted" style="margin:12px 0 6px">Quick examples</p>
+      <div class="chips">
+        <button class="chip" data-ex="0">Ravi: electrician, Hebbal</button>
+        <button class="chip" data-ex="1">Hindi example</button>
+        <button class="chip" data-ex="2">Kannada example</button>
+        <button class="chip" data-ex="3">Painter, Koramangala</button>
+      </div>
+      <p class="muted" id="status"></p>
+    </section>
+
+    <section>
+      <h2>Conversation</h2>
+      <div id="result"><div class="empty">Say or type what you do, and your skill card and nearby jobs will appear here.</div></div>
+    </section>
+  </div>
+
+  <details>
+    <summary>Employer view: post a job</summary>
+    <div style="margin-top:10px">
+      <div class="row">
+        <div style="flex:1;min-width:140px"><select id="jtrade"></select></div>
+        <div style="flex:1;min-width:140px"><select id="jarea"></select></div>
+      </div>
+      <div class="row">
+        <div style="flex:1;min-width:140px"><input id="jwage" type="number" min="1" placeholder="Daily wage in rupees"></div>
+        <div style="flex:1;min-width:140px"><select id="jday"><option value="anytime">any day</option><option value="today">today</option><option value="tomorrow">tomorrow</option></select></div>
+      </div>
+      <button class="btn" id="post">Post job</button>
+      <p class="muted" id="poststatus"></p>
+    </div>
+  </details>
+  <footer>Prototype for wHACKiest 2026. Jobs shown are sample data. Voice uses the browser's speech tools.</footer>
+</div>
 
 <script>
-const TRADES = ["electrician", "plumber", "mason", "painter", "helper"];
-const AREAS = ["hebbal","yelahanka","indiranagar","koramangala","whitefield","jayanagar",
-               "rajajinagar","malleshwaram","yeshwanthpur","btm layout","electronic city","marathahalli"];
-const $ = id => document.getElementById(id);
-let workerId = null;
+// ==== ENGINE START (same logic as profile_parser.py, matching.py and store.py)
+const AREAS = {
+  "hebbal":[13.0358,77.5970], "yelahanka":[13.1007,77.5963], "indiranagar":[12.9784,77.6408],
+  "koramangala":[12.9352,77.6245], "whitefield":[12.9698,77.7500], "jayanagar":[12.9308,77.5838],
+  "rajajinagar":[12.9916,77.5520], "malleshwaram":[13.0035,77.5643], "yeshwanthpur":[13.0285,77.5197],
+  "btm layout":[12.9166,77.6101], "electronic city":[12.8452,77.6602], "marathahalli":[12.9591,77.6974]
+};
+const AREA_ALIASES = {
+  "hebbal":["hebbal","hebbala","hebal","hebbaal","ಹೆಬ್ಬಾಳ","हेब्बल","हेब्बाल"],
+  "yelahanka":["yelahanka","yelahnka","ಯಲಹಂಕ","येलहंका"],
+  "indiranagar":["indiranagar","indira nagar","indranagar","ಇಂದಿರಾನಗರ","इंदिरानगर","इंदिरा नगर"],
+  "koramangala":["koramangala","koramangla","koramanagala","ಕೋರಮಂಗಲ","कोरमंगला"],
+  "whitefield":["whitefield","white field","ವೈಟ್‌ಫೀಲ್ಡ್","व्हाइटफील्ड","वाइटफील्ड"],
+  "jayanagar":["jayanagar","jaya nagar","ಜಯನಗರ","जयनगर"],
+  "rajajinagar":["rajajinagar","rajaji nagar","ರಾಜಾಜಿನಗರ","राजाजीनगर"],
+  "malleshwaram":["malleshwaram","malleswaram","maleshwaram","ಮಲ್ಲೇಶ್ವರಂ","मल्लेश्वरम"],
+  "yeshwanthpur":["yeshwanthpur","yeshwantpur","yeshvantpur","ಯಶವಂತಪುರ","यशवंतपुर"],
+  "btm layout":["btm layout","btm","b t m","ಬಿಟಿಎಂ","बीटीएम"],
+  "electronic city":["electronic city","electronics city","ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಿಟಿ","इलेक्ट्रॉनिक सिटी"],
+  "marathahalli":["marathahalli","marathalli","marathahali","ಮಾರತ್ತಹಳ್ಳಿ","मराठाहल्ली"]
+};
+const TRADE_WORDS = {
+  "electrician":["electrician","electric","wiring","bijli","बिजली","इलेक्ट्रीशियन","ವಿದ್ಯುತ್","ಎಲೆಕ್ಟ್ರಿಷಿಯನ್"],
+  "plumber":["plumber","plumbing","pipe","नल","प्लंबर","ಪ್ಲಂಬರ್"],
+  "mason":["mason","masonry","mistri","मिस्त्री","ಮೇಸ್ತ್ರಿ"],
+  "painter":["painter","painting","पेंटर","ಪೇಂಟರ್"],
+  "helper":["helper","labour","labor","मजदूर","हेल्पर","ಕೂಲಿ","ಹೆಲ್ಪರ್"]
+};
+const NUMBER_WORDS = {
+  "one":1,"two":2,"three":3,"four":4,"five":5,"six":6,"seven":7,"eight":8,"nine":9,"ten":10,"twelve":12,"fifteen":15,"twenty":20,
+  "एक":1,"दो":2,"तीन":3,"चार":4,"पांच":5,"पाँच":5,"छह":6,"छः":6,"सात":7,"आठ":8,"नौ":9,"दस":10,
+  "ಒಂದು":1,"ಎರಡು":2,"ಮೂರು":3,"ನಾಲ್ಕು":4,"ಐದು":5,"ಆರು":6,"ಏಳು":7,"ಎಂಟು":8,"ಒಂಬತ್ತು":9,"ಹತ್ತು":10
+};
+const DAY_WORDS = { "tomorrow":["tomorrow","kal","कल","ನಾಳೆ"], "today":["today","aaj","आज","ಇಂದು"] };
+const SAMPLE_JOBS = [
+  ["electrician","hebbal",900,"tomorrow","Sample employer A"], ["electrician","yelahanka",850,"anytime","Sample employer B"],
+  ["electrician","whitefield",950,"anytime","Sample employer C"], ["plumber","indiranagar",800,"today","Sample employer D"],
+  ["plumber","jayanagar",780,"tomorrow","Sample employer E"], ["mason","whitefield",1000,"anytime","Sample employer F"],
+  ["helper","marathahalli",600,"today","Sample employer G"], ["painter","koramangala",850,"anytime","Sample employer H"]
+];
+const LABELS = {
+  trade: {
+    electrician:{en:"electrician",hi:"इलेक्ट्रीशियन",kn:"ಎಲೆಕ್ಟ್ರಿಷಿಯನ್"}, plumber:{en:"plumber",hi:"प्लंबर",kn:"ಪ್ಲಂಬರ್"},
+    mason:{en:"mason",hi:"मिस्त्री",kn:"ಮೇಸ್ತ್ರಿ"}, painter:{en:"painter",hi:"पेंटर",kn:"ಪೇಂಟರ್"}, helper:{en:"helper",hi:"हेल्पर",kn:"ಹೆಲ್ಪರ್"}
+  },
+  area: {
+    "hebbal":{en:"Hebbal",hi:"हेब्बल",kn:"ಹೆಬ್ಬಾಳ"}, "yelahanka":{en:"Yelahanka",hi:"येलहंका",kn:"ಯಲಹಂಕ"},
+    "indiranagar":{en:"Indiranagar",hi:"इंदिरानगर",kn:"ಇಂದಿರಾನಗರ"}, "koramangala":{en:"Koramangala",hi:"कोरमंगला",kn:"ಕೋರಮಂಗಲ"},
+    "whitefield":{en:"Whitefield",hi:"व्हाइटफ़ील्ड",kn:"ವೈಟ್‌ಫೀಲ್ಡ್"}, "jayanagar":{en:"Jayanagar",hi:"जयनगर",kn:"ಜಯನಗರ"},
+    "rajajinagar":{en:"Rajajinagar",hi:"राजाजीनगर",kn:"ರಾಜಾಜಿನಗರ"}, "malleshwaram":{en:"Malleshwaram",hi:"मल्लेश्वरम",kn:"ಮಲ್ಲೇಶ್ವರಂ"},
+    "yeshwanthpur":{en:"Yeshwanthpur",hi:"यशवंतपुर",kn:"ಯಶವಂತಪುರ"}, "btm layout":{en:"BTM Layout",hi:"बीटीएम लेआउट",kn:"ಬಿಟಿಎಂ ಲೇಔಟ್"},
+    "electronic city":{en:"Electronic City",hi:"इलेक्ट्रॉनिक सिटी",kn:"ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಿಟಿ"}, "marathahalli":{en:"Marathahalli",hi:"मराठाहल्ली",kn:"ಮಾರತ್ತಹಳ್ಳಿ"}
+  },
+  day: { today:{en:"today",hi:"आज",kn:"ಇಂದು"}, tomorrow:{en:"tomorrow",hi:"कल",kn:"ನಾಳೆ"}, anytime:{en:"any day",hi:"कभी भी",kn:"ಯಾವಾಗ ಬೇಕಾದರೂ"} }
+};
+const TIPS = {
+  en: {
+    electrician:"Learn to read a basic circuit diagram, and always switch off the main supply before you start work.",
+    plumber:"Learn to pressure-test pipe joints before the wall is closed.",
+    mason:"Practise checking level and plumb with a spirit level and a plumb bob.",
+    painter:"Learn surface preparation. Sanding and primer decide how long paint lasts.",
+    helper:"Learn basic site safety: helmet, gloves and safe lifting."
+  },
+  hi: {
+    electrician:"काम शुरू करने से पहले मुख्य बिजली सप्लाई हमेशा बंद करें, और सर्किट डायग्राम पढ़ना सीखें।",
+    plumber:"दीवार बंद करने से पहले पाइप जोड़ों की प्रेशर टेस्टिंग करना सीखें।",
+    mason:"स्पिरिट लेवल और साहुल से लेवल और सीधाई जाँचने का अभ्यास करें।",
+    painter:"सतह की तैयारी सीखें। रेगमाल और प्राइमर तय करते हैं कि पेंट कितना टिकेगा।",
+    helper:"हेलमेट, दस्ताने और सुरक्षित तरीके से वज़न उठाना सीखें।"
+  },
+  kn: {
+    electrician:"ಕೆಲಸ ಶುರು ಮಾಡುವ ಮೊದಲು ಮುಖ್ಯ ವಿದ್ಯುತ್ ಸಂಪರ್ಕವನ್ನು ಯಾವಾಗಲೂ ಆಫ್ ಮಾಡಿ, ಮತ್ತು ಸರ್ಕ್ಯೂಟ್ ಡಯಾಗ್ರಾಮ್ ಓದುವುದನ್ನು ಕಲಿಯಿರಿ.",
+    plumber:"ಗೋಡೆ ಮುಚ್ಚುವ ಮೊದಲು ಪೈಪ್ ಜೋಡಣೆಗಳ ಒತ್ತಡ ಪರೀಕ್ಷೆ ಮಾಡುವುದನ್ನು ಕಲಿಯಿರಿ.",
+    mason:"ಲೆವೆಲ್ ಮತ್ತು ಪ್ಲಂಬ್ ಪರೀಕ್ಷೆ ಮಾಡುವುದನ್ನು ಅಭ್ಯಾಸ ಮಾಡಿ.",
+    painter:"ಗೋಡೆ ಸಿದ್ಧತೆ ಕಲಿಯಿರಿ. ಮರಳು ಕಾಗದ ಮತ್ತು ಪ್ರೈಮರ್ ಬಣ್ಣ ಎಷ್ಟು ಕಾಲ ಉಳಿಯುತ್ತದೆ ಎಂದು ನಿರ್ಧರಿಸುತ್ತವೆ.",
+    helper:"ಹೆಲ್ಮೆಟ್, ಕೈಗವಸು ಮತ್ತು ಸುರಕ್ಷಿತವಾಗಿ ಭಾರ ಎತ್ತುವ ವಿಧಾನ ಕಲಿಯಿರಿ."
+  }
+};
+const REPLY = {
+  en: {
+    intro:(p)=>`Thank you. I noted that you are ${/^[aeiou]/.test(p.trade)?"an":"a"} ${p.trade}${p.years?` with ${p.years} years of experience`:""} in ${p.area}.`,
+    none:(p)=>`I could not find open ${p.trade} jobs near you right now.`,
+    found:(n)=>`I found ${n} nearby job${n>1?"s":""}.`,
+    near:(km)=>km<0.5?"in your area":`about ${km} kilometres away`,
+    job:(a,near,w,d)=>`${a}, ${near}, ${w} rupees a day, ${d}.`,
+    typical:(p,v)=>`The usual pay for ${p.trade} work here is about ${v} rupees a day.`,
+    tip:(t)=>`Tip: ${t}`,
+    more:"Sorry, I did not catch your work or your area. Please say it again, for example: I am an electrician in Hebbal."
+  },
+  hi: {
+    intro:(p)=>`धन्यवाद। मैंने समझा कि आप ${p.area} में ${p.years?p.years+" साल के अनुभव वाले ":""}${p.trade} हैं।`,
+    none:(p)=>`अभी आपके पास ${p.trade} के खुले काम नहीं मिले।`,
+    found:(n)=>`मुझे ${n} पास के काम मिले।`,
+    near:(km)=>km<0.5?"आपके इलाके में":`लगभग ${km} किलोमीटर दूर`,
+    job:(a,near,w,d)=>`${a}, ${near}, ${w} रुपये रोज़, ${d}।`,
+    typical:(p,v)=>`यहाँ ${p.trade} के काम की आम मज़दूरी लगभग ${v} रुपये रोज़ है।`,
+    tip:(t)=>`सुझाव: ${t}`,
+    more:"माफ़ कीजिए, मुझे समझ नहीं आया कि आप कौन सा काम करते हैं या किस इलाके में हैं। कृपया फिर से बोलिए।"
+  },
+  kn: {
+    intro:(p)=>`ಧನ್ಯವಾದ. ನೀವು ${p.trade}${p.years?", "+p.years+" ವರ್ಷ ಅನುಭವ":""}, ಪ್ರದೇಶ ${p.area} ಎಂದು ತಿಳಿದುಕೊಂಡೆ.`,
+    none:(p)=>`ಈಗ ${p.trade} ಕೆಲಸಗಳು ಲಭ್ಯವಿಲ್ಲ.`,
+    found:(n)=>`${n} ಹತ್ತಿರದ ಕೆಲಸಗಳು ಸಿಕ್ಕಿವೆ.`,
+    near:(km)=>km<0.5?"ನಿಮ್ಮ ಪ್ರದೇಶದಲ್ಲೇ":`ಸುಮಾರು ${km} ಕಿಲೋಮೀಟರ್ ದೂರ`,
+    job:(a,near,w,d)=>`${a}, ${near}, ದಿನಕ್ಕೆ ${w} ರೂಪಾಯಿ, ${d}.`,
+    typical:(p,v)=>`ಇಲ್ಲಿ ${p.trade} ಕೆಲಸಕ್ಕೆ ಸಾಮಾನ್ಯ ಕೂಲಿ ಸುಮಾರು ${v} ರೂಪಾಯಿ.`,
+    tip:(t)=>`ಸಲಹೆ: ${t}`,
+    more:"ಕ್ಷಮಿಸಿ, ನೀವು ಯಾವ ಕೆಲಸ ಮಾಡುತ್ತೀರಿ ಅಥವಾ ಯಾವ ಪ್ರದೇಶದಲ್ಲಿದ್ದೀರಿ ಎಂದು ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಹೇಳಿ."
+  }
+};
+const FUZZY_CUTOFF = 0.8, DEFAULT_KM = 10, MAX_RADIUS_KM = 15;
 
-function fill(select, items) {
-  items.forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; select.appendChild(o); });
+function ratio(a, b) {
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  let prev = Array.from({length: b.length + 1}, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur.push(Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] !== b[j-1] ? 1 : 0)));
+    }
+    prev = cur;
+  }
+  return 1 - prev[b.length] / Math.max(a.length, b.length);
 }
-fill($("jtrade"), TRADES); fill($("jarea"), AREAS);
+const isAscii = s => /^[\x00-\x7f]*$/.test(s);
+const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function hasWord(t, w, whole) {
+  if (isAscii(w)) return new RegExp("\\b" + esc(w) + (whole ? "\\b" : "")).test(t);
+  return t.includes(w);
+}
+function candidates(t) {
+  const words = t.match(/[a-z]+/g) || [], out = words.slice();
+  for (let i = 0; i + 1 < words.length; i++) out.push(words[i] + " " + words[i+1], words[i] + words[i+1]);
+  return out;
+}
+function fuzzy(t, options) {
+  let best = null, bestScore = FUZZY_CUTOFF;
+  for (const cand of candidates(t)) {
+    if (cand.length < 5) continue;
+    for (const [key, words] of Object.entries(options)) {
+      for (const w of words) {
+        if (isAscii(w) && w.length >= 5) {
+          const s = ratio(cand, w);
+          if (s >= bestScore) { best = key; bestScore = s; }
+        }
+      }
+    }
+  }
+  return best;
+}
+function findArea(t) {
+  let best = null, bestLen = 0;
+  for (const [a, words] of Object.entries(AREA_ALIASES))
+    for (const w of words) if (hasWord(t, w, false) && w.length > bestLen) { best = a; bestLen = w.length; }
+  return best || fuzzy(t, AREA_ALIASES);
+}
+function parseVoiceText(text) {
+  const t = (text || "").toLowerCase();
+  let trade = Object.keys(TRADE_WORDS).find(k => TRADE_WORDS[k].some(w => hasWord(t, w, false))) || null;
+  if (!trade) trade = fuzzy(t, TRADE_WORDS);
+  let years = null;
+  const units = "(?:years?|yrs?|saal|साल|वर्ष|ವರ್ಷ)";
+  let m = t.match(new RegExp("(\\d{1,2})\\s*\\+?\\s*" + units));
+  if (m) years = parseInt(m[1], 10);
+  else {
+    const words = Object.keys(NUMBER_WORDS).sort((a, b) => b.length - a.length).map(esc).join("|");
+    m = t.match(new RegExp("(?<![a-z])(" + words + ")\\s*" + units));
+    if (m) years = NUMBER_WORDS[m[1]];
+  }
+  const area = findArea(t);
+  let availability = "anytime";
+  for (const [day, words] of Object.entries(DAY_WORDS))
+    if (words.some(w => hasWord(t, w, true))) { availability = day; break; }
+  let wage = null;
+  m = t.match(/(?:₹|rs\.?|rupees?)\s*(\d{3,5})|(\d{3,5})\s*(?:₹|rs\b|rupees?|rupaye|रुपये|ರೂಪಾಯಿ)/);
+  if (m) wage = parseInt(m[1] || m[2], 10);
+  return {trade, years, area, availability, wage_expected: wage};
+}
+const missingFields = p => ["trade", "area"].filter(f => !p[f]);
 
-function add(parent, tag, text, cls) {
+function haversine(a, b) {
+  const r = x => x * Math.PI / 180, dLat = r(b[0] - a[0]), dLon = r(b[1] - a[1]);
+  const h = Math.sin(dLat/2)**2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dLon/2)**2;
+  return 6371 * 2 * Math.asin(Math.sqrt(h));
+}
+const distanceKm = (a, b) => (AREAS[a] && AREAS[b]) ? haversine(AREAS[a], AREAS[b]) : DEFAULT_KM;
+function rankJobs(worker, jobs, limit = 3) {
+  const out = [];
+  for (const job of jobs) {
+    if (job.status !== "open" || job.trade !== worker.trade) continue;
+    const d = distanceKm(worker.area, job.area);
+    const dayScore = (!worker.availability || worker.availability === "anytime" || job.day === "anytime") ? 1
+                   : (worker.availability === job.day ? 1 : 0.3);
+    const wageScore = worker.wage_expected ? Math.min(1, job.wage / worker.wage_expected) : 0.5;
+    const score = 0.5 * Math.max(0, 1 - d / MAX_RADIUS_KM) + 0.3 * wageScore + 0.2 * dayScore;
+    out.push({job, score: Math.round(score * 1000) / 1000, distance_km: Math.round(d * 10) / 10});
+  }
+  out.sort((x, y) => y.score - x.score);
+  return out.slice(0, limit);
+}
+function typicalWage(trade, jobs) {
+  const w = jobs.filter(j => j.trade === trade).map(j => j.wage).sort((a, b) => a - b);
+  if (!w.length) return null;
+  const mid = Math.floor(w.length / 2);
+  return Math.trunc(w.length % 2 ? w[mid] : (w[mid-1] + w[mid]) / 2);
+}
+function buildReply(lang, profile, matches, typical, tipText) {
+  const R = REPLY[lang] || REPLY.en;
+  const p = {trade: LABELS.trade[profile.trade][lang], area: LABELS.area[profile.area][lang], years: profile.years};
+  const parts = [R.intro(p)];
+  if (!matches.length) parts.push(R.none(p));
+  else {
+    parts.push(R.found(matches.length));
+    for (const m of matches)
+      parts.push(R.job(LABELS.area[m.job.area][lang], R.near(m.distance_km), m.job.wage, LABELS.day[m.job.day][lang]));
+  }
+  if (typical) parts.push(R.typical(p, typical));
+  if (tipText) parts.push(R.tip(tipText));
+  return parts.join(" ");
+}
+
+const Local = {
+  reset() {
+    this.workers = {}; this.jobs = []; this.ratings = []; this.nw = 0; this.nj = 0;
+    SAMPLE_JOBS.forEach(j => this.addJob(...j));
+  },
+  addWorker(profile) { const id = ++this.nw; this.workers[id] = Object.assign({}, profile, {id}); return this.workers[id]; },
+  addJob(trade, area, wage, day, employer) {
+    const job = {id: ++this.nj, trade, area, wage, day: day || "anytime", employer: employer || "Employer", status: "open", worker_id: null};
+    this.jobs.push(job); return job;
+  },
+  job(id) { return this.jobs.find(j => j.id === id); },
+  complete(jobId, workerId) {
+    const j = this.job(jobId), w = this.workers[workerId];
+    if (!j || !w) throw new Error("Job or worker not found.");
+    if (j.status !== "open") throw new Error("This job is already completed.");
+    if (j.trade !== w.trade) throw new Error("This job is for a different trade.");
+    j.status = "completed"; j.worker_id = workerId;
+    return {message: "Job marked as completed."};
+  },
+  rate(jobId, workerId, stars) {
+    const j = this.job(jobId);
+    if (!(stars >= 1 && stars <= 5)) throw new Error("Stars must be between 1 and 5.");
+    if (!j || j.status !== "completed" || j.worker_id !== workerId) throw new Error("You can only rate a job after it is completed by this worker.");
+    if (this.ratings.some(r => r.job_id === jobId)) throw new Error("This job is already rated.");
+    this.ratings.push({worker_id: workerId, job_id: jobId, stars});
+    return {message: "Rating saved.", skill_card: this.card(workerId)};
+  },
+  card(id) {
+    const w = this.workers[id], mine = this.ratings.filter(r => r.worker_id === id).map(r => r.stars);
+    const done = this.jobs.filter(j => j.worker_id === id).length, yrs = w.years || 0;
+    const avg = mine.length ? Math.round(mine.reduce((a, b) => a + b, 0) / mine.length * 10) / 10 : null;
+    return {worker_id: id, trade: w.trade, years: w.years, area: w.area,
+            level: yrs < 2 ? "Beginner" : yrs < 6 ? "Experienced" : "Senior",
+            jobs_completed: done, ratings: mine.length, average_rating: avg,
+            verified_by_employers: mine.length >= 3 && avg !== null && avg >= 4.0};
+  }
+};
+Local.reset();
+
+function localApi(method, path, body) {
+  let m;
+  if (method === "GET" && path === "/api/jobs") return Local.jobs.slice();
+  if (method === "POST" && path === "/api/reset") { Local.reset(); return {message: "Demo reset."}; }
+  if (method === "POST" && path === "/api/voice-note") {
+    const profile = parseVoiceText(body.text), miss = missingFields(profile);
+    if (miss.length) return {status: "need_more", missing: miss};
+    const w = Local.addWorker(profile);
+    return {status: "ok", worker_id: w.id, profile, skill_card: Local.card(w.id), matches: rankJobs(w, Local.jobs),
+            typical_wage: typicalWage(w.trade, Local.jobs), tip: TIPS.en[w.trade]};
+  }
+  if (method === "POST" && path === "/api/jobs") {
+    const trade = String(body.trade).trim().toLowerCase(), area = String(body.area).trim().toLowerCase();
+    if (!TRADE_WORDS[trade]) throw new Error("Pick a trade from the list.");
+    if (!AREAS[area]) throw new Error("Pick an area from the list.");
+    if (!(body.wage > 0)) throw new Error("Enter a daily wage above 0.");
+    return Local.addJob(trade, area, body.wage, body.day, body.employer);
+  }
+  if ((m = path.match(/^\/api\/jobs\/(\d+)\/complete$/)) && method === "POST") return Local.complete(+m[1], body.worker_id);
+  if ((m = path.match(/^\/api\/jobs\/(\d+)\/rating$/)) && method === "POST") return Local.rate(+m[1], body.worker_id, body.stars);
+  if ((m = path.match(/^\/api\/workers\/(\d+)\/matches$/)) && method === "GET") {
+    const w = Local.workers[+m[1]];
+    if (!w) throw new Error("Worker not found.");
+    return {matches: rankJobs(w, Local.jobs), typical_wage: typicalWage(w.trade, Local.jobs)};
+  }
+  throw new Error("Not found.");
+}
+// ==== ENGINE END
+
+// ---------------- Page ----------------
+const $ = id => document.getElementById(id);
+function h(tag, props, ...kids) {
   const e = document.createElement(tag);
-  if (text) e.textContent = text;
-  if (cls) e.className = cls;
-  parent.appendChild(e);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e[k] = v;
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => { if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c))); });
   return e;
 }
 
-async function api(path, method, body) {
-  const res = await fetch(path, { method, headers: { "Content-Type": "application/json" },
-                                  body: body ? JSON.stringify(body) : undefined });
-  const data = await res.json();
-  if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Please check the fields and try again.");
-  return data;
+let mode = null;            // "server" or "local"
+let lang = "en-IN";
+let current = null;         // {workerId, profile, tip, typical}
+let shown = [];             // matches on screen
+let jobState = {};          // jobId -> {state: "open"|"done"|"rated", stars}
+const lk = () => lang.slice(0, 2);
+
+class HttpError extends Error {}
+async function api(method, path, body) {
+  if (mode === "server") {
+    try {
+      const res = await fetch(path, {method, headers: {"Content-Type": "application/json"}, body: body ? JSON.stringify(body) : undefined});
+      const data = await res.json();
+      if (!res.ok) throw new HttpError(typeof data.detail === "string" ? data.detail : "Please check the details and try again.");
+      return data;
+    } catch (e) {
+      if (e instanceof HttpError) throw e;
+      mode = "local"; updatePill();
+    }
+  }
+  return localApi(method, path, body);
+}
+function updatePill() {
+  const p = $("mode");
+  p.textContent = mode === "server" ? "Connected to server" : "Offline demo engine";
+  p.className = "pill" + (mode === "server" ? " on" : "");
+}
+async function detectMode() {
+  try {
+    const r = await fetch("/api/jobs", {cache: "no-store"});
+    mode = (r.ok && (r.headers.get("content-type") || "").includes("json")) ? "server" : "local";
+  } catch (e) { mode = "local"; }
+  updatePill();
 }
 
+// ---- steps and status
+function setStep(n) {   // n = number of the step now active (0 = none)
+  [...$("steps").children].forEach((el, i) => { el.className = "step" + (i + 1 < n ? " done" : i + 1 === n ? " now" : ""); });
+}
+const setStatus = t => { $("status").textContent = t || ""; };
+
+// ---- speech output
+let voices = [];
+if ("speechSynthesis" in window) { voices = speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); }; }
+function pickVoice(tag) {
+  const norm = v => v.lang.replace("_", "-").toLowerCase();
+  return voices.find(v => norm(v) === tag.toLowerCase()) || voices.find(v => norm(v).startsWith(tag.slice(0, 2).toLowerCase()));
+}
 function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
+  if (!("speechSynthesis" in window)) return "This browser cannot speak. The reply is shown as text.";
+  speechSynthesis.cancel();
+  const v = pickVoice(lang);
+  if (!v && lk() !== "en") return "No " + (lk() === "hi" ? "Hindi" : "Kannada") + " voice on this device, so the reply is shown as text.";
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = $("lang").value;
-  window.speechSynthesis.speak(u);
+  u.lang = lang; if (v) u.voice = v; u.rate = 0.95;
+  speechSynthesis.speak(u);
+  return "";
 }
 
-// Voice input (browser speech recognition, works best in Chrome)
+// ---- speech input
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!SR) { $("mic").disabled = true; $("status").textContent = "Voice input is not supported in this browser. Type instead."; }
-$("mic").onclick = () => {
-  const rec = new SR();
-  rec.lang = $("lang").value;
-  rec.onstart = () => { $("status").textContent = "Listening..."; };
-  rec.onresult = e => { $("note").value = e.results[0][0].transcript; $("status").textContent = "Got it. Tap Find work."; };
-  rec.onerror = e => { $("status").textContent = "Could not hear you (" + e.error + "). Try again or type."; };
-  rec.start();
-};
-$("example").onclick = () => {
-  $("note").value = "I am an electrician with 8 years experience in Hebbal, free tomorrow, 900 rupees";
-};
-
-function showCard(parent, card) {
-  const c = add(parent, "div", "", "card");
-  add(c, "strong", "Skill card");
-  add(c, "div", `${card.trade}, ${card.years || "?"} years, ${card.area} (${card.level})`);
-  add(c, "div", `Jobs completed: ${card.jobs_completed}. Ratings: ${card.ratings}` +
-                (card.average_rating ? `, average ${card.average_rating}` : ""));
-  if (card.verified_by_employers) add(c, "div", "Verified by employers");
-  return c;
+let rec = null, listening = false;
+function micEnvProblem() {
+  if (!SR) return "This browser cannot listen. Use Chrome, or tap a quick example.";
+  const ok = location.protocol === "https:" || ["localhost", "127.0.0.1"].includes(location.hostname) || location.protocol === "file:";
+  if (!ok) return "Voice input needs https or localhost. Open the https link or localhost:8000.";
+  return "";
+}
+function micError(code) {
+  return ({
+    "not-allowed": "Microphone is blocked. Tap the lock icon in the address bar, allow Microphone, then try again.",
+    "service-not-allowed": "Microphone is blocked. Allow it in the browser's site settings, then try again.",
+    "no-speech": "I did not hear anything. Tap the mic and start speaking right away.",
+    "audio-capture": "No microphone found. Plug one in or type instead.",
+    "network": "Speech recognition needs an internet connection in Chrome.",
+    "language-not-supported": "This language is not supported for listening here. Try English or Hindi."
+  })[code] || ("Could not listen (" + code + "). You can type or tap a quick example.");
+}
+function toggleMic() {
+  const problem = micEnvProblem();
+  if (problem) { setStatus(problem); return; }
+  if (listening) { rec.stop(); return; }
+  rec = new SR();
+  rec.lang = lang; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  let finalText = "";
+  rec.onstart = () => { listening = true; $("mic").classList.add("live"); $("miclabel").textContent = "Listening... speak now"; setStatus(""); };
+  rec.onresult = e => {
+    let t = "";
+    for (let i = 0; i < e.results.length; i++) { t += e.results[i][0].transcript; if (e.results[i].isFinal) finalText = t; }
+    $("note").value = t;
+  };
+  rec.onerror = e => setStatus(micError(e.error));
+  rec.onend = () => {
+    listening = false; $("mic").classList.remove("live"); $("miclabel").textContent = "Tap the mic and say what work you do and where";
+    if (finalText.trim()) setTimeout(() => run(finalText), 300);
+  };
+  try { rec.start(); } catch (e) { setStatus("Could not start the microphone. Try again."); }
 }
 
-function showMatches(parent, data) {
-  add(parent, "h3", "Matching jobs");
-  if (!data.matches.length) add(parent, "div", "No open jobs for this trade yet.", "muted");
-  data.matches.forEach(m => {
-    const j = m.job, row = add(parent, "div", "", "job");
-    add(row, "div", `${j.trade} in ${j.area}, ${m.distance_km} km away, Rs ${j.wage} a day, ${j.day}`);
-    add(row, "div", j.employer, "muted");
-    const done = add(row, "button", "Job done", "light");
-    done.onclick = async () => {
-      try {
-        await api(`/api/jobs/${j.id}/complete`, "POST", { worker_id: workerId });
-        done.remove();
-        add(row, "span", "Employer rating: ", "muted");
-        [1, 2, 3, 4, 5].forEach(s => {
-          const b = add(row, "button", String(s), "light");
-          b.onclick = async () => {
-            try {
-              const r = await api(`/api/jobs/${j.id}/rating`, "POST", { worker_id: workerId, stars: s });
-              row.querySelectorAll("button").forEach(x => x.remove());
-              add(row, "div", "Rating saved. Skill card updated below.", "muted");
-              $("cardbox").innerHTML = ""; showCard($("cardbox"), r.skill_card);
-            } catch (err) { add(row, "div", err.message, "err"); }
-          };
-        });
-      } catch (err) { add(row, "div", err.message, "err"); }
-    };
+// ---- rendering
+function renderCard(card, flash) {
+  const box = cardEl; box.innerHTML = "";
+  const left = Math.max(0, 3 - card.ratings);
+  const stars = card.average_rating ? card.average_rating + " / 5" : "No ratings yet";
+  const el = h("div", {class: "scard" + (flash ? " flash" : "")},
+    h("div", {class: "stop"},
+      h("div", {}, h("div", {class: "muted"}, "SKILL CARD"), h("div", {class: "trade"}, card.trade)),
+      h("span", {class: "badge" + (card.verified_by_employers ? " ok" : "")}, card.verified_by_employers ? "Verified by employers" : card.level)),
+    h("div", {class: "muted"}, (LABELS.area[card.area] || {}).en || card.area),
+    h("div", {class: "stats"},
+      h("div", {class: "stat"}, h("b", {}, card.years ? card.years + " yrs" : "?"), h("span", {}, "Experience")),
+      h("div", {class: "stat"}, h("b", {}, String(card.jobs_completed)), h("span", {}, "Jobs done")),
+      h("div", {class: "stat"}, h("b", {}, stars), h("span", {}, "Employer rating"))),
+    card.verified_by_employers ? null :
+      h("div", {class: "muted", style: "margin-top:8px"}, left > 0 ? left + " more employer rating" + (left > 1 ? "s" : "") + " (4 stars or more on average) to get verified."
+                                                                  : "Average rating needs to reach 4 stars to get verified."));
+  box.append(el);
+}
+function renderJobs() {
+  const box = jobsEl; box.innerHTML = "";
+  box.append(h("h2", {style: "margin-top:16px"}, "Nearby jobs"));
+  if (!shown.length) { box.append(h("div", {class: "muted"}, "No open jobs for this trade yet. Ask an employer to post one.")); return; }
+  shown.forEach(m => {
+    const j = m.job, st = jobState[j.id] || {state: "open"};
+    const row = h("div", {class: "job"},
+      h("div", {class: "jtop"},
+        h("div", {}, h("b", {style: "text-transform:capitalize"}, j.trade + " in " + LABELS.area[j.area].en), h("div", {class: "muted"}, j.employer)),
+        h("div", {class: "wage"}, "₹" + j.wage + "/day")),
+      h("div", {class: "meta"}, h("span", {class: "tagx"}, m.distance_km < 0.5 ? "In your area" : m.distance_km + " km away"),
+                                h("span", {class: "tagx"}, LABELS.day[j.day].en)),
+      h("div", {class: "bar"}, h("i", {style: "width:" + Math.round(m.score * 100) + "%"})),
+      h("div", {class: "muted"}, "Match " + Math.round(m.score * 100) + "%"));
+    const act = h("div", {style: "margin-top:8px"});
+    if (st.state === "open") {
+      act.append(h("button", {class: "btn light", onclick: () => finishJob(j.id)}, "Mark job as done"));
+    } else if (st.state === "done") {
+      act.append(h("div", {class: "muted", style: "margin-bottom:6px"}, "Employer rates the worker:"),
+        h("div", {class: "stars"}, [1, 2, 3, 4, 5].map(s => h("button", {class: "star", onclick: () => rateJob(j.id, s)}, String(s)))));
+    } else {
+      act.append(h("div", {class: "done"}, "Completed and rated " + st.stars + " / 5"));
+    }
+    row.append(act); box.append(row);
   });
 }
+let chatEl = null, cardEl = null, jobsEl = null;
+function clearResult() {
+  chatEl = h("div"); cardEl = h("div"); jobsEl = h("div");
+  $("result").innerHTML = "";
+  $("result").append(chatEl, cardEl, jobsEl);
+}
 
-$("send").onclick = async () => {
-  const out = $("result"); out.innerHTML = "";
-  const text = $("note").value.trim();
-  if (!text) { $("status").textContent = "Say or type something first."; return; }
+async function finishJob(id) {
   try {
-    const data = await api("/api/voice-note", "POST", { text });
-    add(out, "p", data.reply);
-    speak(data.reply);
-    if (data.status !== "ok") return;
-    workerId = data.worker_id;
-    const box = add(out, "div"); box.id = "cardbox"; showCard(box, data.skill_card);
-    showMatches(out, data);
-  } catch (err) { add(out, "p", err.message, "err"); }
-};
+    await api("POST", "/api/jobs/" + id + "/complete", {worker_id: current.workerId});
+    jobState[id] = {state: "done"}; setStep(4); renderJobs(); setStatus("");
+  } catch (e) { setStatus(e.message); }
+}
+async function rateJob(id, stars) {
+  try {
+    const r = await api("POST", "/api/jobs/" + id + "/rating", {worker_id: current.workerId, stars});
+    jobState[id] = {state: "rated", stars}; setStep(5);
+    renderJobs(); renderCard(r.skill_card, true); setStatus("Rating added. The skill card has been updated.");
+  } catch (e) { setStatus(e.message); }
+}
 
+async function run(text) {
+  text = (text || $("note").value).trim();
+  if (!text) { setStatus("Speak, type, or tap a quick example first."); return; }
+  $("send").disabled = true; setStatus("");
+  clearResult(); current = null; shown = []; jobState = {};
+  const chat = chatEl;
+  const add = (who, t, replay) => addBubbleTo(chat, who, t, replay);
+  add("you", text); setStep(1);
+  try {
+    const data = await api("POST", "/api/voice-note", {text});
+    if (data.status !== "ok") { add("bot", REPLY[lk()].more, true); return; }
+    current = {workerId: data.worker_id};
+    shown = data.matches.slice();
+    const reply = buildReply(lk(), data.profile, data.matches, data.typical_wage, TIPS[lk()][data.profile.trade]);
+    add("bot", reply, true);
+    renderCard(data.skill_card, false); setStep(3); renderJobs();
+  } catch (e) { setStatus(e.message); }
+  finally { $("send").disabled = false; }
+}
+function addBubbleTo(chat, who, text, replay) {
+  const box = h("div", {class: "bubble " + who}, h("small", {}, who === "you" ? "You said" : "Kelasa Dhwani"), text);
+  if (replay) {
+    const note = h("div", {class: "muted"});
+    box.append(h("div", {}, h("button", {class: "replay", onclick: () => { note.textContent = speak(text); }}, "Replay voice")), note);
+    note.textContent = speak(text);
+  }
+  chat.append(box);
+}
+
+// ---- wiring
+const EXAMPLES = [
+  {lang: "en-IN", text: "I am an electrician with 8 years experience in Hebbal, free tomorrow, 900 rupees"},
+  {lang: "hi-IN", text: "मैं इलेक्ट्रीशियन हूँ, आठ साल का अनुभव, हेब्बल में, कल खाली हूँ"},
+  {lang: "kn-IN", text: "ನಾನು ಪ್ಲಂಬರ್, ಐದು ವರ್ಷ ಅನುಭವ, ಇಂದಿರಾನಗರ, ನಾಳೆ ಖಾಲಿ ಇದ್ದೇನೆ"},
+  {lang: "en-IN", text: "I am a painter with 3 years experience in Koramangala, free today"}
+];
+function setLang(tag) {
+  lang = tag;
+  document.querySelectorAll("#langs .chip").forEach(c => c.classList.toggle("sel", c.dataset.lang === tag));
+}
+document.querySelectorAll("#langs .chip").forEach(c => { c.onclick = () => setLang(c.dataset.lang); });
+document.querySelectorAll("[data-ex]").forEach(c => {
+  c.onclick = () => { const ex = EXAMPLES[+c.dataset.ex]; setLang(ex.lang); $("note").value = ex.text; run(ex.text); };
+});
+$("mic").onclick = toggleMic;
+$("send").onclick = () => run();
+$("clear").onclick = () => { $("note").value = ""; setStatus(""); };
+$("reset").onclick = async () => {
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  await api("POST", "/api/reset");
+  current = null; shown = []; jobState = {}; $("note").value = ""; setStatus(""); setStep(0);
+  $("result").innerHTML = ""; $("result").append(h("div", {class: "empty"}, "Say or type what you do, and your skill card and nearby jobs will appear here."));
+};
+Object.keys(TRADE_WORDS).forEach(t => $("jtrade").append(h("option", {value: t}, t)));
+Object.keys(AREAS).forEach(a => $("jarea").append(h("option", {value: a}, LABELS.area[a].en)));
 $("post").onclick = async () => {
   try {
     const wage = parseInt($("jwage").value, 10);
-    await api("/api/jobs", "POST", { trade: $("jtrade").value, area: $("jarea").value, wage, day: $("jday").value });
-    $("poststatus").textContent = "Job posted. It will show up for matching workers.";
-  } catch (err) { $("poststatus").textContent = err.message; }
+    await api("POST", "/api/jobs", {trade: $("jtrade").value, area: $("jarea").value, wage, day: $("jday").value, employer: "Demo employer"});
+    $("poststatus").textContent = "Job posted.";
+    if (current) {
+      const r = await api("GET", "/api/workers/" + current.workerId + "/matches");
+      const keep = shown.filter(m => (jobState[m.job.id] || {state: "open"}).state !== "open");
+      const ids = new Set(keep.map(m => m.job.id));
+      shown = keep.concat(r.matches.filter(m => !ids.has(m.job.id)));
+      renderJobs();
+      $("poststatus").textContent = "Job posted. The worker's job list was refreshed.";
+    }
+  } catch (e) { $("poststatus").textContent = e.message; }
 };
+setStep(0);
+const problem = micEnvProblem(); if (problem) setStatus(problem);
+detectMode();
 </script>
 </body>
 </html>
